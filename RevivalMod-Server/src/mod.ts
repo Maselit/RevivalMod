@@ -10,6 +10,12 @@ import { ITEM_ID, Prapor, Therapist, Trader, TRADERS } from "./constants";
 import { HttpResponseUtil } from "@spt/utils/HttpResponseUtil";
 import { JsonUtil } from "@spt/utils/JsonUtil";
 import config from "./config.json";
+import * as fs from "fs";
+import * as path from "path";
+
+const configPath = path.join(__dirname, "..", "config.json");
+const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+const DEFIB_USES = config.defibrillatorUsages ?? 4;
 
 class RevivalMod implements IPreSptLoadMod, IPostDBLoadMod, IPostSptLoadMod {
     private mod: string = "RevivalMod";
@@ -124,16 +130,19 @@ class RevivalMod implements IPreSptLoadMod, IPostDBLoadMod, IPostSptLoadMod {
             }
 
             // Add to items array
-            traderTables.assort.items.push({
-                _id: uniqueItemId,
-                _tpl: this.defibId,
-                parentId: "hideout",
-                slotId: "hideout",
-                upd: {
-                    UnlimitedCount: true,
-                    StackObjectsCount: 999999
-                }
-            });
+           traderTables.assort.items.push({
+    _id: uniqueItemId,
+    _tpl: this.defibId,
+    parentId: "hideout",
+    slotId: "hideout",
+    upd: {
+        StackObjectsCount: 1,
+        MedKit: {
+            HpResource: DEFIB_USES,
+            MaxHpResource: DEFIB_USES
+        }
+    }
+});
 
             // Add barter scheme (price in rubles)
             traderTables.assort.barter_scheme[uniqueItemId] = [
@@ -324,6 +333,7 @@ class RevivalMod implements IPreSptLoadMod, IPostDBLoadMod, IPostSptLoadMod {
             this.logger.error(`[${this.mod}] Error registering callbacks: ${error.message}`);
             if (error.stack) {
                 this.logger.error(`[${this.mod}] Stack trace: ${error.stack}`);
+                
             }
         }
     }
