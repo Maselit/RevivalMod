@@ -439,47 +439,44 @@ namespace RevivalMod.Features
         }
 
         private static void ApplyRevivalEffects(Player player)
+    {
+    try
+    {
+        // Modified to provide limited healing instead of full healing
+        ActiveHealthController healthController = player.ActiveHealthController;
+        if (healthController == null)
         {
-            try
+            Plugin.LogSource.LogError("Could not get ActiveHealthController");
+            return;
+        }
+
+        // Remove negative effects
+        //RemoveAllNegativeEffects(healthController);
+
+        // AJUSTE: Ahora solo importa la opción, no si está en hardcore o no.
+        if (Settings.RESTORE_DESTROYED_BODY_PARTS.Value) {
+            // Apply limited healing - enough to survive but not full health
+            foreach (EBodyPart bodyPart in Enum.GetValues(typeof(EBodyPart)))
             {
-                // Modified to provide limited healing instead of full healing
-                ActiveHealthController healthController = player.ActiveHealthController;
-                if (healthController == null)
-                {
-                    Plugin.LogSource.LogError("Could not get ActiveHealthController");
-                    return;
+                Plugin.LogSource.LogDebug($"{bodyPart.ToString()} is on {healthController.GetBodyPartHealth(bodyPart).Current} health.");
+                if (healthController.GetBodyPartHealth(bodyPart).Current < 1) { 
+                    healthController.FullRestoreBodyPart(bodyPart);
+                    Plugin.LogSource.LogDebug($"Restored {bodyPart.ToString()}.");
                 }
-
-                // Remove negative effects
-                //RemoveAllNegativeEffects(healthController);
-
-                if (!Settings.HARDCORE_MODE.Value && Settings.RESTORE_DESTROYED_BODY_PARTS.Value) {
-                    // Apply limited healing - enough to survive but not full health
-
-                    foreach (EBodyPart bodyPart in Enum.GetValues(typeof(EBodyPart)))
-                    {
-                        Plugin.LogSource.LogDebug($"{bodyPart.ToString()} is on {healthController.GetBodyPartHealth(bodyPart).Current} health.");
-                        if (healthController.GetBodyPartHealth(bodyPart).Current < 1) { 
-                            healthController.FullRestoreBodyPart(bodyPart);
-                            Plugin.LogSource.LogDebug($"Restored {bodyPart.ToString()}.");
-                        }
-                    }
-                }
-
-                //// Apply painkillers effect
-                //healthController.DoPainKiller();
-
-                // Apply tremor effect
-                healthController.DoContusion(Settings.REVIVAL_DURATION.Value, 1f);
-                healthController.DoStun(Settings.REVIVAL_DURATION.Value / 2, 1f);
-
-                Plugin.LogSource.LogInfo("Applied limited revival effects to player");
-            }
-            catch (Exception ex)
-            {
-                Plugin.LogSource.LogError($"Error applying revival effects: {ex.Message}");
             }
         }
+
+        // Apply tremor and stun effects
+        healthController.DoContusion(Settings.REVIVAL_DURATION.Value, 1f);
+        healthController.DoStun(Settings.REVIVAL_DURATION.Value / 2, 1f);
+
+        Plugin.LogSource.LogInfo("Applied limited revival effects to player");
+    }
+    catch (Exception ex)
+    {
+        Plugin.LogSource.LogError($"Error applying revival effects: {ex.Message}");
+    }
+}
 
         private static void RemoveAllNegativeEffects(ActiveHealthController healthController)
         {
