@@ -3,6 +3,8 @@
         "Trading": {
             "Trader": "Therapist",
             "AmountRoubles": 150000
-        }
+            "defibrillatorUsages": 4,
+            "headshotAlwaysDead": true
+
     }
 }
